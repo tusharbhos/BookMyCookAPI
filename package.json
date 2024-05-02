@@ -1,0 +1,19 @@
+{
+  "name": "bookmycookapi",
+  "version": "1.0.0",
+  "description": "Backend for BookMyCookAPI",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tusharbhos/BookMyCookAPI.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tusharbhos/BookMyCookAPI/issues"
+  },
+  "homepage": "https://github.com/tusharbhos/BookMyCookAPI#readme"
+}

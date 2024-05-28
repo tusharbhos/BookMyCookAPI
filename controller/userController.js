@@ -1,10 +1,6 @@
 import { generateToken } from "../config/jwtToken";
 import { generateRefreshToken } from "../config/refreshToken";
-import User from "../models/userModel";
-import Coupon from "../models/couponModel"
-import Order from "../models/orderModel"
-import Product from "../models/productModel"
-import Cart from "../models/cartModel"
+import User from "../model/userModel";
 import asyncHandler from "express-async-handler";
 import { validateMongoDbId } from "../utils/validateMongoDbId"
 import jwt from "jsonwebtoken";

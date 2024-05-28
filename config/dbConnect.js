@@ -1,7 +1,17 @@
-import { connect } from 'mongoose'
+import mongoose from 'mongoose';
+require('dotenv').config();
 
-connect('mongodb://127.0.0.1:27017/bookmycook').then(() => {
-    console.log('Connected')
-}).catch((err) => {
-    console.log(err)
-})
+const dbUrl = process.env.MONGO_DB_URI || '';
+
+const connectDB = async () => {
+    try {
+        await mongoose.connect(dbUrl).then((data) => {
+            console.log(`Database connected with ${data.connection.host}`)
+        })
+    } catch (error) {
+        console.log(error.message);
+        setTimeout(connectDB, 5000);
+    }
+}
+
+export default connectDB;

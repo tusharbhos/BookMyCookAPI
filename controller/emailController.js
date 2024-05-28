@@ -8,13 +8,12 @@ export const sendEmail = asyncHandler(async (data, req, res) => {
     const nodemailer = require("nodemailer");
 
     const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 465,
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
         secure: true,
         auth: {
-            // TODO: replace `user` and `pass` values from <https://forwardemail.net>
-            user: process.env.GMAIL,
-            pass: process.env.GMAIL_PASS,
+            user: process.env.SMTP_MAIL,
+            pass: process.env.SMTP_PASSWORD,
         },
     });
 

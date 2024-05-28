@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { createUser, getWishlist, loginUser, createCashOrder, getUserCart, getAllUsers, resetPassword, forgetPasswordToken, getUser, deleteUser, updatePassword, handleRefreshedToken, updateUser, blockUser, unBlockUser, logOut, adminLogin, saveAddress, userCart, emptyCart, applyCoupon, getOrders, updateOrderStatus } from "../controller/userController";
 import { authMiddleware, isAdmin } from '../middleware/authMiddleware'
+
 const router = Router()
 
 router.post('/register', createUser)

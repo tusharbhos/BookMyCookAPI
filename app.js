@@ -1,41 +1,53 @@
-import express from 'express'
-import dotenv from 'dotenv'
-import morgan from 'morgan'
+import express from "express";
+import { configDotenv } from "dotenv";
+import morgan, { format } from "morgan";
+import cookieParser from "cookie-parser";
 import cors from 'cors'
 import fs from 'fs'
-import connectDB from './config/dbConnect.js'
-import bodyParser from 'body-parser'
+import bodyParser from "body-parser";
 
+// Import database connection
+import { dbConnect } from "./configs/dbConnect";
 
-// import all routes
-import userRoute from './routes/userRoute.js'
+// Import error handlers
+import { errorHandler, notFound } from "./middlewares/errorHandler";
 
-
-import cookieParser from 'cookie-parser'
-import { errorHandler, notFound } from './middleware/errorHandler.js'
+// import routes 
+import { userRouter } from './routes/userRoutes'
 
 let app = express()
-dotenv.config()
-let PORT = process.env.PORT || 3113
+configDotenv()
+const PORT = process.env.PORT || 3113
 
+// Cross Origin Resource Sharing
 app.use(cors())
+
+// Body Parser
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
+
+// Cookie Parsing 
 app.use(cookieParser())
 
 // app logs in app.log file
 app.use(morgan('dev', { stream: fs.createWriteStream('./app.log') }))
 
-app.use('/api/v1', userRoute)
+// use imported routes here
+app.use('/api/v1/user', userRouter)
 
+app.get('/health', async (req, res) => {
+    res.send("<h1>Health Ok</h1>")
+})
+
+// error handling
 app.use(notFound)
 app.use(errorHandler)
 
-app.get('/health', (req, res) => {
-    res.status(200).send("<h1>Health is OK</h1>")
-})
+// Route for health checkup
 
+// Run server
 app.listen(PORT, (err) => {
-    console.log(`Port ${PORT} is running`);
-    connectDB()
+    if (err)
+        console.log(err.message)
+    console.log(`Server is running on ${PORT} port`)
 })

@@ -7,7 +7,7 @@ import User from '../models/userModel'
 import createError from 'http-errors'
 import { registerSchema, loginSchema } from "../utils/joiValidationSchema";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwtHelper";
-import { redis } from "../configs/redisConnect";
+import { redis } from "../configs/redis";
 
 // User Registration
 export const registerUser = asyncHandler(async (req, res, next) => {

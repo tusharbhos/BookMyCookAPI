@@ -21,6 +21,7 @@
     "@babel/core": "^7.24.6",
     "@babel/preset-env": "^7.24.6",
     "@babel/register": "^7.24.6",
+    "@hapi/joi": "^17.1.1",
     "bcrypt": "^5.1.1",
     "cloudinary": "^2.2.0",
     "cookie-parser": "^1.4.6",

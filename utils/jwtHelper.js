@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken'
 import createError from 'http-errors'
-import { redis } from '../configs/redisConnect'
+import { redis } from '../configs/redis'
 
 
 export const signAccessToken = (userId) => {

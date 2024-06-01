@@ -1,204 +1,217 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
-const { Schema } = mongoose;
+import { Schema, model } from "mongoose";
+import bcrypt from 'bcrypt'
 
-// Define the MenuItem schema
-const menuItemSchema = new Schema(
-    {
-        name: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        description: {
-            type: String,
-            trim: true,
-        },
-        price: {
-            type: Number,
-            required: true,
-        },
-        photos: [
-            {
-                type: String,
-                trim: true,
-            },
-        ],
-        category: {
-            type: String,
-            enum: ["appetizer", "main_course", "dessert", "beverage"],
-        },
-        ingredients: [
-            {
-                type: String,
-                trim: true,
-            },
-        ],
-        allergens: [
-            {
-                type: String,
-                trim: true,
-            },
-        ],
-    },
-    {
-        timestamps: true,
-    }
-);
+const addressSchema = new Schema({
+  type: { type: String, enum: ['Home', 'Work', 'Other'] },
+  line1: { type: String },
+  line2: { type: String },
+  city: { type: String },
+  state: { type: String },
+  zipCode: { type: String },
+  country: { type: String }
+}, { _id: false });
 
-// Define the Booking schema
-const bookingSchema = new Schema(
-    {
-        bookingID: {
-            type: String,
-            required: true,
-            unique: true,
-        },
-        specialistID: {
-            type: Schema.Types.ObjectId,
-            required: true,
-        },
-        eventDetails: {
-            type: String,
-            trim: true,
-        },
-        budgetRange: {
-            type: String,
-            trim: true,
-        },
-        eventType: {
-            type: String,
-            trim: true,
-        },
-        specialRequests: {
-            type: String,
-            trim: true,
-        },
-        date: {
-            type: Date,
-        },
-    },
-    {
-        timestamps: true,
-    }
-);
 
-// Define the User schema
 const userSchema = new Schema({
-    username: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    password: {
-        type: String,
-        required: true,
-        minlength: 8,
-        validate: {
-            validator: function (v) {
-                return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(v);
-            },
-            message: props =>
-                `${props.value} is not a valid password. It should contain at least 8 characters, including alphabets and numbers.`
-        }
-    },
+  userName: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  firstName: {
+    type: String,
+    required: true,
+    lowercase: true
+  },
+  lastName: {
+    type: String,
+    required: true,
+    lowercase: true
+  },
+  phoneNumber: {
+    type: String,
+    unique: true
+  },
+  role: {
+    type: String,
+    enum: ['Admin', 'RestaurantAdmin', 'User'],
+    default: 'User'
+  },
+  dateOfBirth: {
+    type: Date
+  },
+  addresses: {
+    type: [addressSchema],
+    default: []
+  },
+  preferredPaymentMethod: {
+    type: String
+  },
+  preferredCuisine: [String],
+  dietaryRestrictions: [String],
+  receiveNewsletter: {
+    type: Boolean,
+    default: false
+  },
+  notificationPreferences: {
     email: {
-        type: String,
-        required: true,
-        unique: true,
-        match: [/^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}\.com$/, 'Please enter a valid email address ending with .com'],
+      type: Boolean,
+      default: true
     },
-    phoneNumber: {
-        type: String,
-        required: true
+    sms: {
+      type: Boolean,
+      default: true
     },
-    location: {
+    push: {
+      type: Boolean,
+      default: true
+    }
+  },
+  orderHistory: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Order'
+    }
+  ],
+  paymentMethods: [
+    {
+      cardType: {
         type: String
-    },
-    registrationDate: {
-        type: Date,
-        default: Date.now
-    },
-    gender: {
-        type: String,
-        enum: ["male", "female", "other"]
-    },
-    adhaarCard: {
+      },
+      cardNumber: {
         type: String
-    },
-    panCard: {
+      },
+      expiryDate: {
         type: String
-    },
-    occupation: {
-        type: String,
-        enum: ["user", "cook", "chef", "caterer", "bartender"],
-    },
-    profilePicture: {
+      },
+      cardHolderName: {
         type: String
-    },
-    isBlocked: {
-        type: Boolean,
-        default: false
-    },
-    refreshToken: {
-        type: String
-    },
-    passwordChangedAt: Date,
-    passwordResetToken: String,
-    passwordResetExpires: Date,
-    specialties: {
-        type: Schema.Types.ObjectId,
-        ref: "MenuItem",
-        default: [],
-    },
-    menu: {
-        type: Schema.Types.ObjectId,
-        ref: "MenuItem",
-        default: [],
-    },
-    availability: {
-        type: String,
-        enum: ['available', 'not available']
-    },
-    experience: {
-        type: Number
-    },
-    signatureCocktails: {
-        type: String
-    },
-    openBarService: {
-        type: Boolean
-    },
-    customizationOfDrinkMenus: {
-        type: Boolean
-    },
-    bookings: [
-        {
-            type: Schema.Types.ObjectId,
-            ref: "Booking"
-        }
-    ],
-});
+      }
+    }
+  ],
+  refreshToken: {
+    type: String
+  },
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpires: {
+    type: Date
+  },
+  twoFactorEnabled: {
+    type: Boolean,
+    default: false
+  },
+  twoFactorCode: {
+    type: String
+  },
+  twoFactorExpires: {
+    type: Date
+  },
+},
+  {
+    timestamps: true
+  });
 
-// Middleware for hashing passwords before saving
-userSchema.pre("save", async function (next) {
-    if (!this.isModified("password")) return next();
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-});
+userSchema.pre('save', async function (next) {
+  try {
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(this.password, salt)
+    this.password = hashedPassword
+  } catch (error) {
+    next(error)
+  }
+})
 
-// Method to compare passwords
-userSchema.methods.comparePassword = async function (
-    candidatePassword,
-    userPassword
-) {
-    return await bcrypt.compare(candidatePassword, userPassword);
+userSchema.methods.isValidPassword = async function (password) {
+  try {
+    return await bcrypt.compare(password, this.password)
+  } catch (error) {
+    throw error
+  }
+}
+
+const User = model('User', userSchema);
+module.exports = User;
+
+
+
+
+
+// Example
+/*
+const userDocumentExample = {
+  "_id": "60b8d295f1c2f4a8c1d42c71",
+  "username": "john_doe",
+  "email": "john.doe@example.com",
+  "password": "$2b$10$EixZaYVK1fsbw1ZfbX3OXe.P8T5Z6hxGZxQ4UahXh5H.i1gInVz8W", // Hashed password
+  "firstName": "John",
+  "lastName": "Doe",
+  "phoneNumber": "123-456-7890",
+  "dateOfBirth": "1980-01-01T00:00:00.000Z",
+  "addresses": [
+    {
+      "type": "Home",
+      "line1": "123 Main St",
+      "line2": "Apt 4B",
+      "city": "New York",
+      "state": "NY",
+      "zipCode": "10001",
+      "country": "USA"
+    },
+    {
+      "type": "Work",
+      "line1": "456 Business Rd",
+      "line2": "",
+      "city": "New York",
+      "state": "NY",
+      "zipCode": "10002",
+      "country": "USA"
+    }
+  ],
+  "preferredPaymentMethod": "Credit Card",
+  "preferredCuisine": ["Italian", "Mexican"],
+  "dietaryRestrictions": ["Vegetarian"],
+  "receiveNewsletter": true,
+  "notificationPreferences": {
+    "email": true,
+    "sms": true,
+    "push": true
+  },
+  "orderHistory": [
+    "60b8d295f1c2f4a8c1d42c73",
+    "60b8d295f1c2f4a8c1d42c74"
+  ],
+  "paymentMethods": [
+    {
+      "cardType": "Visa",
+      "cardNumber": "4111111111111111",
+      "expiryDate": "12/25",
+      "cardHolderName": "John Doe"
+    },
+    {
+      "cardType": "MasterCard",
+      "cardNumber": "5555555555554444",
+      "expiryDate": "10/24",
+      "cardHolderName": "John Doe"
+    }
+  ],
+  "resetPasswordToken": "reset_token_example",
+  "resetPasswordExpires": "2024-06-01T12:00:00.000Z",
+  "twoFactorEnabled": false,
+  "twoFactorCode": "123456",
+  "twoFactorExpires": "2024-05-30T12:00:00.000Z",
+  "createdAt": "2024-05-30T12:00:00.000Z",
+  "updatedAt": "2024-05-30T12:00:00.000Z"
 };
 
-// Export the schema
-const User = mongoose.model("User", userSchema);
-const Booking = mongoose.model("Booking", bookingSchema);
-const MenuItem = mongoose.model("MenuItem", menuItemSchema);
-
-module.exports = { User, Booking, MenuItem };
+module.exports = userDocumentExample;*/

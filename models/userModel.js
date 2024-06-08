@@ -29,12 +29,12 @@ const userSchema = new Schema({
   },
   firstName: {
     type: String,
-    required: true,
+    // required: true,
     lowercase: true
   },
   lastName: {
     type: String,
-    required: true,
+    // required: true,
     lowercase: true
   },
   phoneNumber: {
@@ -121,16 +121,6 @@ const userSchema = new Schema({
   {
     timestamps: true
   });
-
-userSchema.pre('save', async function (next) {
-  try {
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(this.password, salt)
-    this.password = hashedPassword
-  } catch (error) {
-    next(error)
-  }
-})
 
 userSchema.methods.isValidPassword = async function (password) {
   try {

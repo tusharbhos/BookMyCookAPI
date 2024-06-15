@@ -1,12 +1,13 @@
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
+import { isObjectIdOrHexString } from "mongoose";
 import crypto from 'crypto'
 import bcrypt from 'bcrypt'
 import uniqid from 'uniqid'
 import User from '../models/userModel'
 import createError from 'http-errors'
 import { registerSchema, loginSchema } from "../utils/joiValidationSchema";
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwtHelper";
+import { sendToken, signRefreshToken, verifyRefreshToken } from "../utils/jwtHelper";
 import { redis } from "../configs/redis";
 import ejs from 'ejs';
 import path from "path";
@@ -32,9 +33,9 @@ export const createActivationToken = (user) => {
 // User Registration
 export const registerUser = async (req, res) => {
 
-    let validUser = await registerSchema.validateAsync(req.body)
-    const hashedPassword = await bcrypt.hash(validUser.password, await bcrypt.genSalt(10))
-    let user = { ...validUser, "password": hashedPassword }
+    let validUserInput = await registerSchema.validateAsync(req.body)
+    const hashedPassword = await bcrypt.hash(validUserInput.password, await bcrypt.genSalt(10))
+    let user = { ...validUserInput, "password": hashedPassword }
 
     try {
         const userExists = await User.findOne({ email: user.email });
@@ -108,29 +109,21 @@ export const activateAccount = async (req, res) => {
 }
 
 export const loginUser = async (req, res) => {
-    const { email, password } = req.body;
+    let validUserInput = await loginSchema.validateAsync(req.body)
 
     try {
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(401).json({ message: 'Invalid email or password' });
-        }
+        if (!validUserInput) throw new Error({ message: "Invalid username or Password" })
 
-        const isMatch = await user.matchPassword(password);
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid email or password' });
-        }
+        let foundUser = await User.findOne({ userName: validUserInput.userName }).select("+password")
+        if (!foundUser) throw new Error({ message: "Invalid username or Password" })
 
-        if (!user.isVerified) {
-            return res.status(401).json({ message: 'Please verify your account' });
-        }
+        let matchPassword = await foundUser.isValidPassword(validUserInput.password)
+        if (!matchPassword) throw new Error({ message: "Invalid username or Password" })
 
-        const token = generateToken(user._id);
-
-        res.status(200).json({ token, user });
+        sendToken(foundUser, 200, res)
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        res.status(400).json({ message: 'Server error' });
     }
 };
 
@@ -149,17 +142,77 @@ export const refreshToken = asyncHandler(async (req, res, next) => {
     }
 })
 
-// Logout
-export const logoutUser = async (req, res) => {
-    try {
-        // Clear the token from the client-side storage (e.g., localStorage, cookies)
-        res.clearCookie('token');
-        res.status(200).json({ message: 'Logged out successfully' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+export const updateAccessToken = asyncHandler(
+    async (req, res, next) => {
+        try {
+            const refresh_token = req.cookies.refreshToken;
+            console.log(refresh_token)
+            const decoded = jwt.verify(
+                refresh_token,
+                process.env.REFRESH_TOKEN_SECRET
+            );
+
+            const message = "Could not refresh token";
+            if (!decoded) {
+                return next(new ErrorHandler(message, 400));
+            }
+            const session = await redis.get(decoded.id);
+
+            if (!session) {
+                return next(
+                    new ErrorHandler("Please login for access this resources!", 400)
+                );
+            }
+
+            const user = JSON.parse(session);
+
+            const accessToken = jwt.sign(
+                { id: user._id },
+                process.env.ACCESS_TOKEN,
+                {
+                    expiresIn: "5m",
+                }
+            );
+
+            const refreshToken = jwt.sign(
+                { id: user._id },
+                process.env.REFRESH_TOKEN,
+                {
+                    expiresIn: "3d",
+                }
+            );
+
+            req.user = user;
+
+            res.cookie("accessToken", accessToken, accessTokenOptions);
+            res.cookie("refreshToken", refreshToken, refreshTokenOptions);
+
+            await redis.set(user._id, JSON.stringify(user), "EX", 604800); // 7days
+
+            return next();
+        } catch (error) {
+            return next(new ErrorHandler(error.message, 400));
+        }
     }
-};
+);
+
+// Logout
+export const logoutUser = asyncHandler(
+    async (req, res,) => {
+        try {
+            res.cookie("accessToken", "", { maxAge: 1 });
+            res.cookie("refreshToken", "", { maxAge: 1 });
+            const userId = req.user?._id || "";
+            await redis.del(userId);
+            res.status(200).json({
+                success: true,
+                message: "Logged out successfully",
+            });
+        } catch (error) {
+            return next(new ErrorHandler(error.message, 400));
+        }
+    }
+);
 
 //   Verify account
 export const verifyAccount = async (req, res) => {

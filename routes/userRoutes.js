@@ -6,7 +6,7 @@ export const userRouter = express.Router()
 
 userRouter.post('/register', registerUser)
 userRouter.post('/activate-account', activateAccount)
-userRouter.post('/login-user', loginUser)
-userRouter.delete('/logout-user', logoutUser)
+userRouter.post('/login', loginUser)
+userRouter.get('/logout', isAuthenticated, logoutUser)
 userRouter.post('/refresh-token', isAuthenticated, refreshToken)
 

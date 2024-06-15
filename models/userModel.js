@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 
 const addressSchema = new Schema({
   type: { type: String, enum: ['Home', 'Work', 'Other'] },
@@ -29,12 +30,12 @@ const userSchema = new Schema({
   },
   firstName: {
     type: String,
-    // required: true,
+    required: true,
     lowercase: true
   },
   lastName: {
     type: String,
-    // required: true,
+    required: true,
     lowercase: true
   },
   phoneNumber: {
@@ -98,6 +99,10 @@ const userSchema = new Schema({
       }
     }
   ],
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
   refreshToken: {
     type: String
   },
@@ -129,6 +134,20 @@ userSchema.methods.isValidPassword = async function (password) {
     throw error
   }
 }
+
+// sign access token
+userSchema.methods.SignAccessToken = function () {
+  return jwt.sign({ id: this._id }, process.env.ACCESS_TOKEN_SECRET || "", {
+    expiresIn: "5m",
+  });
+};
+
+// sign refresh token
+userSchema.methods.SignRefreshToken = function () {
+  return jwt.sign({ id: this._id }, process.env.REFRESH_TOKEN_SECRET || "", {
+    expiresIn: "3d",
+  });
+};
 
 const User = model('User', userSchema);
 module.exports = User;

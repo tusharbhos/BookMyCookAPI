@@ -1,21 +1,22 @@
 import jwt from 'jsonwebtoken'
-import createError from 'http-errors'
-import dotenv from 'dotenv'
-dotenv.config()
+import User from '../models/userModel'
 
-export const isAuthenticated = (req, res, next) => {
-    if (!req.headers['authorization']) return next(createError.Unauthorized())
+export const isAuthenticated = async (req, res, next) => {
+    let token;
 
-    const authHeader = req.headers['authorization']
-    const bearerToken = authHeader.split(' ')
-    const token = bearerToken[1]
-
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, payload) => {
-        if (err) {
-            const message = err.name === 'JsonWebTokenError' ? 'Unauthorized' : err.message
-            return next(createError.Unauthorized(message))
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            req.user = await User.findById(decoded.id).select('-password');
+            next();
+        } catch (err) {
+            console.error(err);
+            res.status(401).json({ message: 'Not authorized, token failed' });
         }
-        req.payload = payload
-        next()
-    })
-}
+    }
+
+    if (!token) {
+        res.status(401).json({ message: 'Not authorized, no token' });
+    }
+};
